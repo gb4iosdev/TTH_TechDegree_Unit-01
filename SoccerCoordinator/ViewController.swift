@@ -36,48 +36,142 @@ class ViewController: UIViewController {
         ["Name" : "Herschel Krustofski",  "Height" : "45", "Experience" : "YES",  "Guardians" : "Hyman and Rachel Krustofski"]
     ]
     
+    //Team Information
+    let teamsInfo: [String : [String : String]] = [
+        "teamSharks"  : ["TeamName" : "Sharks",  "TrainingTime" : "March 17, 3pm"],
+        "teamDragons" : ["TeamName" : "Dragons", "TrainingTime" : "March 17, 1pm"],
+        "teamRaptors" : ["TeamName" : "Raptors", "TrainingTime" : "March 18, 1pm"]
+    ]
+    
+    //temporary teams to sort experienced from not
+    var experiencedPlayers: [Player] = []
+    var inExperiencedPlayers: [Player] = []
+    
+    //Final team collections
     var teamSharks:  [Player] = []
     var teamDragons: [Player] = []
     var teamRaptors: [Player] = []
-
-    var teams: [[Player]] = []
     
+    //Temporary variables to assist with allocations
+    var teams: [[Player]] = Array(repeating: [], count: 3)
     var nextTeamForExperiencedPlayer: Int = 0
-
+    
+    //Set this to false for 'Meets Expectations' functionality only
+    var withEqualHeights = true
+    
+    var letters: [String] = []
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
         assignPlayers()
-        print(teams.count)
-        print("Team0: \(teams[0].count) Team1: \(teams[1].count) Team2: \(teams[2].count)")
-        teamSharks = teams[0]
+    
+        teamSharks =  teams[0]
         teamDragons = teams[1]
         teamRaptors = teams[2]
+        
+        if withEqualHeights {
+            print("Average ht of \(teamsInfo["teamSharks"]!["TeamName"]!) is: \(averageHeightOf(teamSharks))")
+            print("Average ht of \(teamsInfo["teamDragons"]!["TeamName"]!) is: \(averageHeightOf(teamDragons))")
+            print("Average ht of \(teamsInfo["teamRaptors"]!["TeamName"]!) is: \(averageHeightOf(teamRaptors))\n\n")
+        }
+        
+        generateLetters(withTeamInfo: "teamSharks", withPlayers: teamSharks)
+        generateLetters(withTeamInfo: "teamDragons", withPlayers: teamSharks)
+        generateLetters(withTeamInfo: "teamRaptors", withPlayers: teamSharks)
+        
+        outputLetters()
     }
     
     func assignPlayers() {
         
-        let maxPlayersInTeam = players.count / teams.count
-        
-        //Allocate all experienced players first to meet requirement of same number of experienced players on each team
+        //Sort teams into experienced and not:
         for player in players {
-            //Check for experience and assign to the next team that should receive an experienced player, then update to next team
             if player["Experience"] == "YES" {
-                teams[nextTeamForExperiencedPlayer].append(player)
-                nextTeamForExperiencedPlayer = nextTeamForExperiencedPlayer == 2 ? 0 : nextTeamForExperiencedPlayer + 1
-                //print("Team0: \(teams[0].count) Team1: \(teams[1].count) Team2: \(teams[2].count)")
-            }
-        }//
-        for player in players {
-            if player["Experience"] == "NO" {
-                for teamNum in 0..<teams.count {
-                    if teams[teamNum].count < maxPlayersInTeam {
-                        teams[teamNum].append(player)
-                    }
-                }
+                experiencedPlayers.append(player)
+            } else {
+                inExperiencedPlayers.append(player)
             }
         }
         
+        //Assign experienced players first
+        if withEqualHeights {
+            addPlayersToTeamsEqualHeights(experiencedPlayers)
+            addPlayersToTeamsEqualHeights(inExperiencedPlayers)
+        } else {    //Just allocate to the teams
+            addPlayersToTeams(experiencedPlayers)
+            addPlayersToTeams(inExperiencedPlayers)
+        }
+        
+    }
+    
+    func addPlayersToTeamsEqualHeights(_ players: [Player]) {
+        //Used to assist in sorting case where player is appended to end of sortedTeam array (ie no greater height is found)
+        var greaterHeightFound: Bool
+        
+        //Simply add the first element
+        var sortedTeam: [Player] = []
+        sortedTeam.append(players[0])
+        
+        //Sort the players in asc order of height
+        for playerIndex in 1..<players.count {
+            greaterHeightFound = false
+            let playerHeight = players[playerIndex]["Height"]!
+            for index in 0..<sortedTeam.count {
+                if playerHeight <= sortedTeam[index]["Height"]! {
+                    greaterHeightFound = true
+                    sortedTeam.insert(players[playerIndex], at: index)
+                    break
+                }
+            }
+            if !greaterHeightFound {    //No greater height found, so add to the end
+                sortedTeam.append(players[playerIndex])
+            }
+        }
+        
+        //Cycles through array possitions 0,1,2 to allocate to teams
+        var nextTeamForPlayer: Int = 0
+        //Add the players in outside pairs to achieve as close to average height as possible
+        while sortedTeam.count > teams.count {
+            teams[nextTeamForPlayer].append(sortedTeam.removeFirst())
+            teams[nextTeamForPlayer].append(sortedTeam.removeLast())
+            nextTeamForPlayer = nextTeamForPlayer == 2 ? 0 : nextTeamForPlayer + 1
+        }
+        
+        //add last set of players not able to be allocated in pairs (if any)
+        addPlayersToTeams(sortedTeam)
+    }
+    
+    func addPlayersToTeams(_ players: [Player]) {
+        //Cycles through array possitions 0,1,2 to allocate to teams
+        var nextTeamForPlayer: Int = 0
+        
+        for player in players {
+            teams[nextTeamForPlayer].append(player)
+            nextTeamForPlayer = nextTeamForPlayer == 2 ? 0 : nextTeamForPlayer + 1
+        }
+    }
+    
+    func averageHeightOf(_ players: [Player]) -> Double {
+        var sum: Int = 0
+        for player in players {
+            sum += Int(player["Height"]!)!
+        }
+        return round((10 * Double(sum) / Double(players.count)))/10
+    }
+    
+    //Function generateLetters simply adds a string per player to the letters collection
+    func generateLetters(withTeamInfo team: String, withPlayers players: [Player]) {
+        
+        for player in players {
+            letters.append ("Dear \(player["Guardians"]!) \n\n  This letter is to let you know that your child \(player["Name"]!) has been assigned to the soccer team: \(teamsInfo[team]!["TeamName"]!) \n  Please note that the first practice time is: \(teamsInfo[team]!["TrainingTime"]!) \n\nBest Regards \nTeam Tree House Soccer Academy \n")
+        }
+    }
+    
+    func outputLetters() {
+        for letter in letters {
+            print("\(letter) \n")
+        }
     }
 
     override func didReceiveMemoryWarning() {
