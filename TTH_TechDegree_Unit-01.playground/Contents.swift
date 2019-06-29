@@ -44,7 +44,6 @@ var teamRaptors: [Player] = []
 
 //Temporary variables to assist with allocations
 var teams: [[Player]] = [teamSharks, teamDragons, teamRaptors]
-var nextTeamForExperiencedPlayer: Int = 0
 
 //Set this to false for 'Meets Expectations' functionality only
 var withEqualHeights = true
@@ -97,13 +96,13 @@ func addPlayersToTeamsEqualHeights(_ players: [Player]) {
         }
     }
     
-    //Cycles through array possitions 0,1,2 to allocate to teams
+    //Cycles through array positions to allocate to teams
     var nextTeamForPlayer: Int = 0
     //Add the players in outside pairs to achieve as close to average height as possible
     while sortedTeam.count > teams.count {
-        teams[nextTeamForPlayer].append(sortedTeam.removeFirst())
-        teams[nextTeamForPlayer].append(sortedTeam.removeLast())
-        nextTeamForPlayer = nextTeamForPlayer == 2 ? 0 : nextTeamForPlayer + 1
+        teams[nextTeamForPlayer % teams.count].append(sortedTeam.removeFirst())
+        teams[nextTeamForPlayer % teams.count].append(sortedTeam.removeLast())
+        nextTeamForPlayer += 1
     }
     
     //add last set of players not able to be allocated in pairs (if any)
@@ -111,12 +110,9 @@ func addPlayersToTeamsEqualHeights(_ players: [Player]) {
 }
 
 func addPlayersToTeams(_ players: [Player]) {
-    //Cycles through array possitions 0,1,2 to allocate to teams
-    var nextTeamForPlayer: Int = 0
     
-    for player in players {
-        teams[nextTeamForPlayer].append(player)
-        nextTeamForPlayer = nextTeamForPlayer == 2 ? 0 : nextTeamForPlayer + 1
+    for (index, player) in players.enumerated() {
+        teams[index % teams.count].append(player)
     }
 }
 
@@ -159,3 +155,4 @@ generateLetters(withTeamInfo: "teamDragons", withPlayers: teamSharks)
 generateLetters(withTeamInfo: "teamRaptors", withPlayers: teamSharks)
 
 outputLetters()
+
