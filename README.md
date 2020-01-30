@@ -1,6 +1,6 @@
 # Team Treehouse TechDegree Project 1
 
-##Project 01:  Soccer League Coordinator
+#Project 01:  Soccer League Coordinator
 
 **App Description:**  Soccer Team Coordinator app.  Capture player data; assign players evenly to 3 teams so that each team has equivalent average heights; print an automated mail-out to guardians
 
